@@ -1,0 +1,22 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-office-blue: #2b579a;
+  --color-office-blue-dark: #1e3f72;
+  --color-office-accent: #d83b01;
+  --font-sans: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Times New Roman', 'Georgia', serif;
+  --font-mono: 'Consolas', 'Courier New', monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-sans);
+}

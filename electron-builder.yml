@@ -1,0 +1,22 @@
+appId: com.rafael.clonedoword
+productName: Clone do Word
+directories:
+  output: dist
+  buildResources: resources
+files:
+  - out/**/*
+  - package.json
+win:
+  target: nsis
+  icon: resources/icon.ico
+fileAssociations:
+  - ext: docx
+    name: Documento Word
+    description: Documento do Microsoft Word
+    role: Editor
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Clone do Word
