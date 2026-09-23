@@ -8,12 +8,16 @@ export function toUint8Array(data: unknown): Uint8Array {
   }
   if (Array.isArray(data)) return new Uint8Array(data)
   if (data && typeof data === 'object') {
-    const record = data as Record<string, number>
+    const record = data as Record<string, unknown>
+    // Serialização estilo Node/IPC: { type: 'Buffer', data: number[] }
+    if (record.type === 'Buffer' && Array.isArray(record.data)) {
+      return new Uint8Array((record.data as number[]).map((b) => b & 0xff))
+    }
     const keys = Object.keys(record)
       .filter((k) => /^\d+$/.test(k))
       .sort((a, b) => Number(a) - Number(b))
     if (keys.length > 0) {
-      return new Uint8Array(keys.map((k) => record[k] & 0xff))
+      return new Uint8Array(keys.map((k) => Number(record[k]) & 0xff))
     }
   }
   throw new Error('Conteúdo do arquivo inválido (bytes ilegíveis)')

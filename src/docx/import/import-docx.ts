@@ -275,32 +275,40 @@ export function proseMirrorToDocx(pmDoc: Record<string, unknown>, originalParts:
   }
 }
 
+function pmMarksToRunProps(marks: Record<string, unknown>[]): Run['rPr'] {
+  const rPr: Run['rPr'] = {}
+  for (const m of marks) {
+    if (m.type === 'bold') rPr.bold = true
+    if (m.type === 'italic') rPr.italic = true
+    if (m.type === 'underline') rPr.underline = true
+    if (m.type === 'strike') rPr.strike = true
+    if (m.type === 'textStyle') {
+      const a = (m.attrs || {}) as Record<string, string>
+      if (a.fontFamily) rPr.fontFamily = a.fontFamily
+      if (a.fontSize) rPr.fontSize = a.fontSize
+      if (a.color) rPr.color = a.color
+    }
+    if (m.type === 'highlight') {
+      const a = (m.attrs || {}) as Record<string, string>
+      if (a.color) rPr.highlight = a.color
+    }
+  }
+  return rPr
+}
+
+function pmContentToRuns(content: Record<string, unknown>[]): Run[] {
+  return content.map((child) => ({
+    rPr: pmMarksToRunProps((child.marks as Record<string, unknown>[] || [])),
+    text: (child.text as string) || ''
+  }))
+}
+
 function pmNodeToBlocks(node: Record<string, unknown>): Block[] {
   switch (node.type) {
     case 'paragraph': {
       const attrs = (node.attrs || {}) as Record<string, unknown>
       const content = (node.content as Record<string, unknown>[] || [])
-      const runs: Run[] = content.map((child) => {
-        const marks = (child.marks as Record<string, unknown>[] || [])
-        const rPr: Run['rPr'] = {}
-        for (const m of marks) {
-          if (m.type === 'bold') rPr.bold = true
-          if (m.type === 'italic') rPr.italic = true
-          if (m.type === 'underline') rPr.underline = true
-          if (m.type === 'strike') rPr.strike = true
-          if (m.type === 'textStyle') {
-            const a = (m.attrs || {}) as Record<string, string>
-            if (a.fontFamily) rPr.fontFamily = a.fontFamily
-            if (a.fontSize) rPr.fontSize = a.fontSize
-            if (a.color) rPr.color = a.color
-          }
-          if (m.type === 'highlight') {
-            const a = (m.attrs || {}) as Record<string, string>
-            if (a.color) rPr.highlight = a.color
-          }
-        }
-        return { rPr, text: (child.text as string) || '' }
-      })
+      const runs = pmContentToRuns(content)
       const pPr: ParagraphProps = {}
       if (attrs.textAlign) pPr.align = attrs.textAlign as ParagraphProps['align']
       if (attrs.styleId) pPr.styleId = attrs.styleId as string
@@ -310,24 +318,10 @@ function pmNodeToBlocks(node: Record<string, unknown>): Block[] {
       const attrs = (node.attrs || {}) as Record<string, unknown>
       const level = (attrs.level as number) || 1
       const content = (node.content as Record<string, unknown>[] || [])
-      const runs: Run[] = content.map((child) => {
-        const marks = (child.marks as Record<string, unknown>[] || [])
-        const rPr: Run['rPr'] = {}
-        for (const m of marks) {
-          if (m.type === 'bold') rPr.bold = true
-          if (m.type === 'italic') rPr.italic = true
-          if (m.type === 'underline') rPr.underline = true
-          if (m.type === 'strike') rPr.strike = true
-        }
-        return { rPr, text: (child.text as string) || '' }
-      })
-      return [
-        {
-          type: 'paragraph',
-          pPr: { styleId: `Heading${level}` },
-          runs
-        }
-      ]
+      const runs = pmContentToRuns(content)
+      const pPr: ParagraphProps = { styleId: `Heading${level}` }
+      if (attrs.textAlign) pPr.align = attrs.textAlign as ParagraphProps['align']
+      return [{ type: 'paragraph', pPr, runs }]
     }
     case 'bulletList':
     case 'orderedList': {

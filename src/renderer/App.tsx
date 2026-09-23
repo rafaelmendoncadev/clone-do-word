@@ -4,8 +4,7 @@ import { ErrorBoundary } from './layout/ErrorBoundary'
 import { useDocumentStore } from './stores/useDocumentStore'
 import { useEditorStore } from './stores/useEditorStore'
 import { useEditorUiStore } from './stores/useEditorUiStore'
-import { useRecentFilesStore } from './stores/useRecentFilesStore'
-import { exportDocx, proseMirrorToDocx } from '../docx'
+import { saveCurrentDocument, saveCurrentDocumentAs } from './lib/save-docx'
 import { openDocxIntoEditor, openRecentPath } from './lib/open-docx'
 import { StartScreen } from './features/home/StartScreen'
 
@@ -18,69 +17,14 @@ export default function App() {
     window.api?.app.getVersion().then(setVersion)
   }, [setVersion])
 
+  // Os saves são serializados dentro de save-docx.ts (enqueueSave): abrir/trocar
+  // de arquivo aguarda a gravação pendente (drainSaves) antes de ler o disco.
   const handleSave = useCallback(async () => {
-    const docStore = useDocumentStore.getState()
-    const ed = useEditorStore.getState().editor
-    if (!ed) return
-
-    try {
-      const pmDoc = ed.getJSON()
-      const originalParts = docStore.originalParts || new Map()
-      const doc = proseMirrorToDocx(pmDoc, originalParts)
-      const bytes = await exportDocx(doc)
-
-      if (docStore.filePath) {
-        // Documento já existe no disco: salva diretamente sem abrir diálogo
-        await window.api?.fs.writeFile(docStore.filePath, bytes)
-        docStore.markSaved(docStore.filePath)
-        useRecentFilesStore.getState().addFile({
-          path: docStore.filePath,
-          name: docStore.fileName,
-          lastOpened: new Date().toLocaleDateString('pt-BR')
-        })
-      } else {
-        // Documento novo (sem caminho): abre diálogo de salvar
-        const defaultPath = `${docStore.fileName}.docx`
-        const savedPath = await window.api?.dialog.saveDocx(defaultPath, bytes)
-        if (savedPath) {
-          docStore.markSaved(savedPath)
-          useRecentFilesStore.getState().addFile({
-            path: savedPath,
-            name: docStore.fileName,
-            lastOpened: new Date().toLocaleDateString('pt-BR')
-          })
-        }
-      }
-    } catch (err) {
-      console.error('Erro ao salvar documento:', err)
-      alert(`Erro ao salvar documento:\n${err instanceof Error ? err.message : String(err)}`)
-    }
+    await saveCurrentDocument()
   }, [])
 
   const handleSaveAs = useCallback(async () => {
-    const docStore = useDocumentStore.getState()
-    const ed = useEditorStore.getState().editor
-    if (!ed) return
-
-    try {
-      const pmDoc = ed.getJSON()
-      const originalParts = docStore.originalParts || new Map()
-      const doc = proseMirrorToDocx(pmDoc, originalParts)
-      const bytes = await exportDocx(doc)
-      const defaultPath = docStore.filePath || `${docStore.fileName}.docx`
-      const savedPath = await window.api?.dialog.saveDocx(defaultPath, bytes)
-      if (savedPath) {
-        docStore.markSaved(savedPath)
-        useRecentFilesStore.getState().addFile({
-          path: savedPath,
-          name: docStore.fileName,
-          lastOpened: new Date().toLocaleDateString('pt-BR')
-        })
-      }
-    } catch (err) {
-      console.error('Erro ao salvar como:', err)
-      alert(`Erro ao salvar como:\n${err instanceof Error ? err.message : String(err)}`)
-    }
+    await saveCurrentDocumentAs()
   }, [])
 
   useEffect(() => {

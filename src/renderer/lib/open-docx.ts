@@ -4,6 +4,7 @@ import { toUint8Array } from '../../docx/import/bytes'
 import { useDocumentStore } from '../stores/useDocumentStore'
 import { useEditorStore } from '../stores/useEditorStore'
 import { useRecentFilesStore } from '../stores/useRecentFilesStore'
+import { drainSaves } from './save-queue'
 import { countWords } from '@shared/lib/format'
 import type { OpenResult } from '@shared/types/ipc'
 
@@ -21,6 +22,10 @@ export async function resolveEditor(timeoutMs = 5000): Promise<Editor | null> {
 }
 
 export async function openDocxIntoEditor(preferred?: Editor | null): Promise<void> {
+  // Espera saves pendentes: o save é assíncrono (exportDocx + writeFile) e pode
+  // ainda estar gravando quando o usuário troca de arquivo. Sem este drain, a
+  // leitura abaixo pega o disco no meio da gravação e reexibe o conteúdo antigo.
+  await drainSaves()
   const docStore = useDocumentStore.getState()
 
   let result: OpenResult | null | undefined
@@ -65,6 +70,8 @@ export async function openDocxIntoEditor(preferred?: Editor | null): Promise<voi
 }
 
 export async function openRecentPath(filePath: string, preferred?: Editor | null): Promise<boolean> {
+  // Mesmo drain do openDocxIntoEditor: não ler o disco com um save em andamento.
+  await drainSaves()
   const docStore = useDocumentStore.getState()
   const editor = preferred && !preferred.isDestroyed ? preferred : await resolveEditor()
   if (!editor || editor.isDestroyed) return false

@@ -2,10 +2,16 @@ import { XMLParser, XMLBuilder } from 'fast-xml-parser'
 import type { Block, Paragraph, ParagraphProps, Run, RunProps, TableBlock, TableCell, TableRow } from '../model/document-model'
 import type { OoxmlPackage } from '../ooxml/package'
 
+// trimValues/parseTagValue/parseAttributeValue DESLIGADOS de propósito:
+// - trimValues removia espaços em runs ("plain " + "bold " → "plainbold")
+// - parseTagValue convertia "10.00"/"007" em números e alterava o texto ao reabrir
 const parser = new XMLParser({
   ignoreAttributes: false,
   attributeNamePrefix: '@_',
   removeNSPrefix: true,
+  trimValues: false,
+  parseTagValue: false,
+  parseAttributeValue: false,
   isArray: (name) => ['p', 'r', 'tbl', 'tr', 'tc', 'br', 't', 'style', 'num', 'abstractNum', 'lvl', 'hyperlink'].includes(name)
 })
 
@@ -143,7 +149,10 @@ const orderedParser = new XMLParser({
   preserveOrder: true,
   removeNSPrefix: true,
   ignoreAttributes: false,
-  attributeNamePrefix: '@_'
+  attributeNamePrefix: '@_',
+  trimValues: false,
+  parseTagValue: false,
+  parseAttributeValue: false
 })
 
 const chunkBuilder = new XMLBuilder({
@@ -179,16 +188,15 @@ export function parseDocumentXml(xml: string, _pkg?: OoxmlPackage): Block[] {
           const chunkXml = chunkBuilder.build([child])
           const parsed = parser.parse(chunkXml) as { p?: Record<string, unknown> | Record<string, unknown>[] }
           const pObj = Array.isArray(parsed.p) ? parsed.p[0] : parsed.p
-          if (pObj) {
-            const para = parseParagraph(pObj)
-            const hasPageBreak = para.runs.some((r) => r.breakType === 'page')
-            if (hasPageBreak) {
-              para.runs = para.runs.filter((r) => r.breakType !== 'page')
-              if (para.runs.length > 0) blocks.push(para)
-              blocks.push({ type: 'pageBreak' })
-            } else {
-              blocks.push(para)
-            }
+          // <w:p></w:p> vira ""/null no parser — ainda assim é um parágrafo e deve sobreviver
+          const para = parseParagraph(pObj && typeof pObj === 'object' ? pObj : {})
+          const hasPageBreak = para.runs.some((r) => r.breakType === 'page')
+          if (hasPageBreak) {
+            para.runs = para.runs.filter((r) => r.breakType !== 'page')
+            if (para.runs.length > 0) blocks.push(para)
+            blocks.push({ type: 'pageBreak' })
+          } else {
+            blocks.push(para)
           }
         } else if (key === 'tbl') {
           const chunkXml = chunkBuilder.build([child])

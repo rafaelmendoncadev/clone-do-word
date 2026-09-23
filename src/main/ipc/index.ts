@@ -3,6 +3,34 @@ import { readFile, writeFile } from 'fs/promises'
 import { basename, extname } from 'path'
 import { validatePath } from '../utils/path-guard'
 
+/**
+ * Normaliza bytes vindos do renderer via contextBridge/IPC.
+ * TypedArray pode chegar como objeto plano, ArrayBuffer ou { type: 'Buffer', data }.
+ */
+function toIpcBuffer(data: unknown): Buffer {
+  if (Buffer.isBuffer(data)) return data
+  if (data instanceof Uint8Array) return Buffer.from(data.buffer, data.byteOffset, data.byteLength)
+  if (data instanceof ArrayBuffer) return Buffer.from(data)
+  if (ArrayBuffer.isView(data)) {
+    const view = data as ArrayBufferView
+    return Buffer.from(view.buffer, view.byteOffset, view.byteLength)
+  }
+  if (Array.isArray(data)) return Buffer.from(data)
+  if (data && typeof data === 'object') {
+    const record = data as Record<string, unknown>
+    if (record.type === 'Buffer' && Array.isArray(record.data)) {
+      return Buffer.from(record.data as number[])
+    }
+    const keys = Object.keys(record)
+      .filter((k) => /^\d+$/.test(k))
+      .sort((a, b) => Number(a) - Number(b))
+    if (keys.length > 0) {
+      return Buffer.from(keys.map((k) => Number(record[k]) & 0xff))
+    }
+  }
+  throw new Error('Bytes inválidos recebidos do renderer')
+}
+
 function parentWindow(): BrowserWindow | null {
   return BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0] ?? null
 }
@@ -58,7 +86,7 @@ export function registerIpcHandlers(): void {
     const result = await showSave(defaultPath)
     if (result.canceled || !result.filePath) return null
     validatePath(result.filePath)
-    await writeFile(result.filePath, bytes)
+    await writeFile(result.filePath, toIpcBuffer(bytes))
     return result.filePath
   })
 
@@ -81,7 +109,11 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle('fs:writeFile', async (_e, path: string, bytes: Uint8Array) => {
     validatePath(path)
-    await writeFile(path, bytes)
+    const buf = toIpcBuffer(bytes)
+    if (buf.byteLength === 0) {
+      throw new Error('Nada para gravar: conteúdo vazio')
+    }
+    await writeFile(path, buf)
   })
 
   ipcMain.handle('window:setTitle', (_e, title: string, dirty: boolean) => {
