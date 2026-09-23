@@ -6,7 +6,6 @@ import {
   toggleBulletList,
   setHeading,
   setParagraph,
-  undo,
   redo,
   indent,
   outdent,

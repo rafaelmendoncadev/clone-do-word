@@ -32,6 +32,10 @@ const KeyboardShortcuts = Extension.create({
   name: 'keyboardShortcuts',
   addKeyboardShortcuts() {
     return {
+      'Mod-s': () => {
+        window.dispatchEvent(new CustomEvent('app:save'))
+        return true
+      },
       'Mod-b': () => {
         toggleBold(this.editor)
         return true

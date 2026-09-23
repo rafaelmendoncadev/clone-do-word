@@ -7,12 +7,14 @@ interface DocumentState {
   wordCount: number
   pageCount: number
   appVersion: string
+  originalParts: Map<string, Uint8Array>
   setFileName: (name: string) => void
   setFilePath: (path: string | null) => void
   setDirty: (dirty: boolean) => void
   setWordCount: (n: number) => void
   setPageCount: (n: number) => void
   setAppVersion: (v: string) => void
+  setOriginalParts: (parts: Map<string, Uint8Array>) => void
   markSaved: (path: string) => void
   newDocument: () => void
 }
@@ -24,6 +26,7 @@ export const useDocumentStore = create<DocumentState>((set) => ({
   wordCount: 0,
   pageCount: 1,
   appVersion: '',
+  originalParts: new Map(),
   setFileName: (fileName) => set({ fileName }),
   setFilePath: (filePath) => set({ filePath }),
   setDirty: (dirty) => {
@@ -33,6 +36,7 @@ export const useDocumentStore = create<DocumentState>((set) => ({
   setWordCount: (wordCount) => set({ wordCount }),
   setPageCount: (pageCount) => set({ pageCount }),
   setAppVersion: (appVersion) => set({ appVersion }),
+  setOriginalParts: (originalParts) => set({ originalParts }),
   markSaved: (filePath) => {
     set({ filePath, dirty: false, fileName: filePath.split(/[\\/]/).pop() || 'Documento' })
     void window.api?.window.setDirty(false)
@@ -44,7 +48,8 @@ export const useDocumentStore = create<DocumentState>((set) => ({
       filePath: null,
       dirty: false,
       wordCount: 0,
-      pageCount: 1
+      pageCount: 1,
+      originalParts: new Map()
     })
     void window.api?.window.setDirty(false)
   }

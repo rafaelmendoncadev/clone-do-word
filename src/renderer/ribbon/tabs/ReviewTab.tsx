@@ -1,6 +1,7 @@
 import { useEditorUiStore } from '../../stores/useEditorUiStore'
 import { RibbonGroup } from '../RibbonGroup'
 import { RibbonButton } from '../controls/RibbonButton'
+import { MessageSquare, ListTree, Search, Replace } from 'lucide-react'
 
 export function ReviewTab() {
   const {
@@ -15,38 +16,40 @@ export function ReviewTab() {
     <div className="flex items-stretch gap-0">
       <RibbonGroup label="Comentários">
         <RibbonButton
-          icon="💬"
+          icon={<MessageSquare className="h-5 w-5 text-office-blue" />}
           label="Comentários"
           size="lg"
           active={showCommentsPane}
           onClick={toggleCommentsPane}
-          title="Painel de comentários"
+          title="Abrir ou fechar painel de comentários"
         />
       </RibbonGroup>
+
       <RibbonGroup label="Sumário">
         <RibbonButton
-          icon="📑"
+          icon={<ListTree className="h-5 w-5 text-office-blue" />}
           label="Sumário"
           size="lg"
           active={showTocPane}
           onClick={toggleTocPane}
-          title="Painel de sumário"
+          title="Abrir ou fechar sumário de títulos"
         />
       </RibbonGroup>
+
       <RibbonGroup label="Edição">
         <RibbonButton
-          icon="🔍"
+          icon={<Search className="h-5 w-5 text-neutral-700" />}
           label="Localizar"
           size="lg"
           onClick={() => setFindReplaceMode('find')}
-          title="Localizar (Ctrl+F)"
+          title="Localizar texto no documento (Ctrl+F)"
         />
         <RibbonButton
-          icon="🔄"
+          icon={<Replace className="h-5 w-5 text-neutral-700" />}
           label="Substituir"
           size="lg"
           onClick={() => setFindReplaceMode('replace')}
-          title="Substituir (Ctrl+H)"
+          title="Substituir texto no documento (Ctrl+H)"
         />
       </RibbonGroup>
     </div>

@@ -22,6 +22,10 @@ export interface IpcApi {
     setTitle(title: string, dirty: boolean): Promise<void>
     setDirty(dirty: boolean): Promise<void>
   }
+  print: {
+    exportPdf(defaultPath: string): Promise<string | null>
+    document(): Promise<void>
+  }
   menu: {
     onAction(callback: (action: string) => void): () => void
   }

@@ -1,13 +1,15 @@
 import { resolve, normalize } from 'path'
-import { app } from 'electron'
-
-const ALLOWED_DIRS = (): string[] => [app.getPath('documents'), app.getPath('desktop'), app.getPath('downloads'), app.getPath('temp')]
 
 export function validatePath(path: string): void {
+  if (!path || typeof path !== 'string') {
+    throw new Error('Caminho de arquivo inválido')
+  }
+  if (path.includes('\0')) {
+    throw new Error('Caminho contém caracteres nulos')
+  }
   const resolved = normalize(resolve(path))
-  const allowed = ALLOWED_DIRS()
-  const ok = allowed.some((dir) => resolved.startsWith(normalize(resolve(dir))))
-  if (!ok) {
-    throw new Error(`Path não permitido: ${path}`)
+  if (!resolved || resolved === '.') {
+    throw new Error(`Caminho inválido: ${path}`)
   }
 }
+

@@ -13,7 +13,7 @@ Electron desktop Word clone (PT-BR UI). electron-vite + React 18 + TipTap 3 + Zu
 | Tests | `pnpm test` |
 | Single test file | `pnpm vitest run src/path/to/file.test.ts` |
 | Watch tests | `pnpm test:watch` |
-| Lint | `pnpm lint` — no root `eslint.config.*` yet; may need a flat config before it works |
+| Lint | `pnpm lint` (`eslint src`, flat config in `eslint.config.mjs`) |
 
 Verify before claiming done: `pnpm typecheck && pnpm test`. `pnpm build` when touching electron-vite entrypoints.
 
@@ -42,15 +42,15 @@ Hard-won constraints — violations caused a crash on first keystroke:
 1. **Do not add raw `prosemirror-*` packages.** Only `@tiptap/pm` (and `@tiptap/*` extensions). Dual copies of `prosemirror-model` break wrap/split (Enter, lists) and can kill the renderer.
 2. **`StarterKit` already includes** underline, gapcursor, dropcursor, bold, italic, strike, lists, history/undo, link. Do **not** register those again — TipTap warns `Duplicate extension names` and the editor misbehaves. Disable via `StarterKit.configure({ code: false, codeBlock: false })`, not by adding extras.
 3. **Keyboard shortcuts live in an Extension** (`addKeyboardShortcuts` in `src/renderer/editor/extensions/schema.ts`), not `editor.setOptions({ editorProps: { handleKeyDown } })`. `setOptions` clobbers `editorProps` and races `useEditor`.
-4. **Stable references** for `extensions` and `editorProps` in `useEditor` (module const or `useMemo`). A new object every render retriggers `setOptions` on the live view.
+4. **Stable references** for `extensions` and `editorProps` in `useEditor` — use `useMemo(() => createEditorExtensions(), [])` (see `EditorCanvas.tsx`). A new object every render retriggers `setOptions` on the live view.
 5. Editor schema/commands: `src/renderer/editor/extensions/schema.ts`, `src/renderer/lib/editor-commands.ts`.
 
 ## Testing
 
 - Vitest; default env is `node`. Renderer/TipTap tests need `// @vitest-environment happy-dom` at the top of the file.
 - Include glob: `src/**/__tests__/**/*.test.ts` and `tests/**/*.test.ts` only (`.tsx` is **not** picked up).
-- Existing: `src/docx/__tests__/`, `src/renderer/editor/__tests__/typing-crash.test.ts`.
-- No e2e/Electron harness — UI crash-on-type was fixed via unit tests + manual `pnpm dev`.
+- Existing: `src/docx/__tests__/`, `src/renderer/editor/__tests__/`.
+- No e2e/Electron harness (`tests/e2e/` is empty) — UI crash-on-type was fixed via unit tests + manual `pnpm dev`.
 
 ## Other gotchas
 

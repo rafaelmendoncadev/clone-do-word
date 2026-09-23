@@ -1,6 +1,5 @@
-import { XMLParser } from 'fast-xml-parser'
-import type { Block, Paragraph, ParagraphProps, Run, RunProps, TableBlock, TableCell, TableRow, ImageBlock } from '../model/document-model'
-import { getPartAsBytes, getPartAsString } from '../ooxml/package'
+import { XMLParser, XMLBuilder } from 'fast-xml-parser'
+import type { Block, Paragraph, ParagraphProps, Run, RunProps, TableBlock, TableCell, TableRow } from '../model/document-model'
 import type { OoxmlPackage } from '../ooxml/package'
 
 const parser = new XMLParser({
@@ -140,41 +139,87 @@ function parseTable(tbl: Record<string, unknown>): TableBlock {
   return { type: 'table', rows }
 }
 
-export function parseDocumentXml(xml: string, pkg: OoxmlPackage): Block[] {
-  const doc = parser.parse(xml)
-  const document = doc.document as Record<string, unknown>
-  const body = document.body as Record<string, unknown>
+const orderedParser = new XMLParser({
+  preserveOrder: true,
+  removeNSPrefix: true,
+  ignoreAttributes: false,
+  attributeNamePrefix: '@_'
+})
+
+const chunkBuilder = new XMLBuilder({
+  preserveOrder: true,
+  ignoreAttributes: false,
+  attributeNamePrefix: '@_'
+})
+
+export function parseDocumentXml(xml: string, _pkg?: OoxmlPackage): Block[] {
   const blocks: Block[] = []
 
+  try {
+    const ordered = orderedParser.parse(xml) as Array<Record<string, unknown>>
+    let bodyChildren: Array<Record<string, unknown>> | undefined
+    for (const rootItem of ordered) {
+      if (rootItem && typeof rootItem === 'object') {
+        const docNode = (rootItem as Record<string, unknown>).document as Array<Record<string, unknown>> | undefined
+        if (Array.isArray(docNode)) {
+          for (const docChild of docNode) {
+            if (docChild && typeof docChild === 'object' && Array.isArray((docChild as Record<string, unknown>).body)) {
+              bodyChildren = (docChild as Record<string, unknown>).body as Array<Record<string, unknown>>
+              break
+            }
+          }
+        }
+      }
+    }
+
+    if (bodyChildren && Array.isArray(bodyChildren)) {
+      for (const child of bodyChildren) {
+        const key = Object.keys(child)[0]
+        if (key === 'p') {
+          const chunkXml = chunkBuilder.build([child])
+          const parsed = parser.parse(chunkXml) as { p?: Record<string, unknown> | Record<string, unknown>[] }
+          const pObj = Array.isArray(parsed.p) ? parsed.p[0] : parsed.p
+          if (pObj) {
+            const para = parseParagraph(pObj)
+            const hasPageBreak = para.runs.some((r) => r.breakType === 'page')
+            if (hasPageBreak) {
+              para.runs = para.runs.filter((r) => r.breakType !== 'page')
+              if (para.runs.length > 0) blocks.push(para)
+              blocks.push({ type: 'pageBreak' })
+            } else {
+              blocks.push(para)
+            }
+          }
+        } else if (key === 'tbl') {
+          const chunkXml = chunkBuilder.build([child])
+          const parsed = parser.parse(chunkXml) as { tbl?: Record<string, unknown> | Record<string, unknown>[] }
+          const tblObj = Array.isArray(parsed.tbl) ? parsed.tbl[0] : parsed.tbl
+          if (tblObj) {
+            blocks.push(parseTable(tblObj))
+          }
+        }
+      }
+      if (blocks.length > 0) {
+        return blocks
+      }
+    }
+  } catch (err) {
+    console.warn('Falha no parser sequencial de document.xml, usando fallback:', err)
+  }
+
+  // Fallback se não conseguir parsear sequencialmente
+  const doc = parser.parse(xml)
+  const document = doc.document as Record<string, unknown>
+  const body = (document?.body as Record<string, unknown>) || {}
   const pArr = (body.p as Record<string, unknown>[]) || []
   const tblArr = (body.tbl as Record<string, unknown>[]) || []
 
-  // Preservar ordem mista p/tbl
-  const ordered: Array<{ type: 'p' | 'tbl'; data: Record<string, unknown> }> = []
-  // Reconstruir ordem a partir do XML bruto seria ideal; aqui usamos ordem p-then-tbl como aproximação
-  // Melhor: iterar filhos do body — fast-xml-parser não mantém ordem, então processamos p e tbl
-  // Para melhor fidelidade, parseamos sequencialmente
-  for (const p of pArr) ordered.push({ type: 'p', data: p })
-  for (const t of tblArr) ordered.push({ type: 'tbl', data: t })
-
-  // Ordenar por posição no XML se possível (fallback: p antes de tbl)
-  // Na prática, vamos processar todos os p e tbl
-  for (const item of ordered) {
-    if (item.type === 'p') {
-      const para = parseParagraph(item.data)
-      // Detectar page break
-      const hasPageBreak = para.runs.some((r) => r.breakType === 'page')
-      if (hasPageBreak) {
-        // Remover o break do run e adicionar bloco de quebra
-        para.runs = para.runs.filter((r) => r.breakType !== 'page')
-        if (para.runs.length > 0) blocks.push(para)
-        blocks.push({ type: 'pageBreak' })
-      } else {
-        blocks.push(para)
-      }
-    } else {
-      blocks.push(parseTable(item.data))
-    }
+  for (const p of pArr) {
+    const para = parseParagraph(p)
+    blocks.push(para)
+  }
+  for (const t of tblArr) {
+    blocks.push(parseTable(t))
   }
 
   return blocks

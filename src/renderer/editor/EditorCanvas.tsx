@@ -20,6 +20,7 @@ export function EditorCanvas() {
   const {
     zoom,
     showRuler,
+    showStylesPane,
     showCommentsPane,
     showTocPane,
     showFindReplace,
@@ -94,7 +95,7 @@ export function EditorCanvas() {
           </div>
         </Page>
       </div>
-      <StylesPane />
+      {showStylesPane && <StylesPane />}
       {showCommentsPane && <CommentsPane open onClose={toggleCommentsPane} />}
       {showTocPane && <TocPanel open onClose={toggleTocPane} />}
       {showFindReplace && (

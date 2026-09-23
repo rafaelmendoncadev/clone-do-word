@@ -9,7 +9,7 @@ function createWindow(): void {
     minWidth: 900,
     minHeight: 600,
     title: 'Clone do Word',
-    show: false,
+    show: true,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -18,7 +18,31 @@ function createWindow(): void {
     }
   })
 
-  win.on('ready-to-show', () => win.show())
+  win.focus()
+
+  win.on('ready-to-show', () => {
+    win.show()
+    win.focus()
+    win.setAlwaysOnTop(true)
+    win.setAlwaysOnTop(false)
+  })
+
+  // Garantir exibição e foco mesmo se ready-to-show atrasar
+  setTimeout(() => {
+    if (!win.isDestroyed()) {
+      if (!win.isVisible()) win.show()
+      win.focus()
+      win.setAlwaysOnTop(true)
+      win.setAlwaysOnTop(false)
+    }
+  }, 1000)
+
+  win.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL) => {
+    console.error('Falha ao carregar janela:', errorCode, errorDescription, validatedURL)
+    if (!win.isDestroyed() && !win.isVisible()) {
+      win.show()
+    }
+  })
 
   win.on('close', (e) => {
     if (!shouldConfirmClose(win)) {

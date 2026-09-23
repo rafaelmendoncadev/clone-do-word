@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useEditorStore } from '../../stores/useEditorStore'
+import { ListTree, X, RefreshCw } from 'lucide-react'
 
 interface Props {
   open: boolean
@@ -28,30 +29,47 @@ export function TocPanel({ open, onClose }: Props) {
   if (!open || !editor) return null
 
   return (
-    <div className="w-56 border-l border-neutral-200 bg-neutral-50 p-3">
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-xs font-semibold text-neutral-500">SUMÁRIO</h3>
-        <button className="text-neutral-400 hover:text-neutral-600" onClick={onClose}>✕</button>
+    <div className="w-64 border-l border-neutral-200 bg-white p-3 shadow-sm flex flex-col h-full">
+      <div className="mb-3 flex items-center justify-between border-b border-neutral-100 pb-2">
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-neutral-700">
+          <ListTree className="h-4 w-4 text-office-blue" />
+          <span>SUMÁRIO DO DOCUMENTO</span>
+        </div>
+        <button
+          className="rounded p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
+          onClick={onClose}
+          title="Fechar sumário"
+        >
+          <X className="h-4 w-4" />
+        </button>
       </div>
+
       <button
-        className="mb-3 w-full rounded bg-neutral-200 px-2 py-1 text-xs hover:bg-neutral-300"
+        className="mb-3 flex items-center justify-center gap-1.5 w-full rounded border border-neutral-300 bg-neutral-50 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-100 transition-colors"
         onClick={refreshToc}
       >
+        <RefreshCw className="h-3.5 w-3.5 text-neutral-500" />
         Atualizar sumário
       </button>
-      <div className="flex flex-col gap-1">
+
+      <div className="flex flex-col gap-1 overflow-auto flex-1">
         {headings.map((h, i) => (
           <button
             key={i}
-            className="rounded px-1 py-0.5 text-left text-xs hover:bg-neutral-100"
-            style={{ paddingLeft: `${(h.level - 1) * 12 + 4}px` }}
-            onClick={() => editor.commands.focus(h.pos)}
+            className="rounded px-2 py-1 text-left text-xs hover:bg-blue-50 hover:text-office-blue transition-colors truncate"
+            style={{ paddingLeft: `${(h.level - 1) * 14 + 8}px` }}
+            onClick={() => editor.chain().focus().setTextSelection(h.pos + 1).scrollIntoView().run()}
+            title={h.text}
           >
-            <span className="text-neutral-400">{h.level}. </span>
-            {h.text}
+            <span className="font-semibold text-neutral-400 mr-1.5">T{h.level}</span>
+            <span className="text-neutral-700">{h.text || '(Sem texto)'}</span>
           </button>
         ))}
-        {headings.length === 0 && <p className="text-xs text-neutral-400">Nenhum título encontrado.</p>}
+        {headings.length === 0 && (
+          <div className="py-8 text-center text-xs text-neutral-400">
+            Nenhum título (Título 1, 2, 3) encontrado no documento.
+          </div>
+        )}
       </div>
     </div>
   )

@@ -18,6 +18,10 @@ const api: IpcApi = {
     setTitle: (title, dirty) => ipcRenderer.invoke('window:setTitle', title, dirty),
     setDirty: (dirty) => ipcRenderer.invoke('window:setDirty', dirty)
   },
+  print: {
+    exportPdf: (defaultPath) => ipcRenderer.invoke('print:pdf', defaultPath),
+    document: () => ipcRenderer.invoke('print:document')
+  },
   menu: {
     onAction: (callback) => {
       const handler = (_e: Electron.IpcRendererEvent, action: string) => callback(action)

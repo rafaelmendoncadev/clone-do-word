@@ -97,8 +97,44 @@ export function registerIpcHandlers(): void {
     }
   })
 
-  ipcMain.handle('window:setDirty', (e, dirty: boolean) => {
-    const win = BrowserWindow.fromWebContents(e.sender)
-    if (win) dirtyWindows.set(win.id, dirty)
+  ipcMain.handle('window:setDirty', (_e, dirty: boolean) => {
+    const win = parentWindow()
+    if (win) {
+      dirtyWindows.set(win.id, dirty)
+      const suffix = ' — Clone do Word'
+      const current = win.getTitle().replace(/^[●]\s+/, '')
+      const title = current.endsWith(suffix) ? current.slice(0, -suffix.length) : current
+      win.setTitle(`${dirty ? '● ' : ''}${title || 'Documento'}${suffix}`)
+      if (!dirty && closeAfterSave.has(win.id)) {
+        closeAfterSave.delete(win.id)
+        setForceCloseAll(true)
+        win.close()
+      }
+    }
+  })
+
+  ipcMain.handle('print:pdf', async (_e, defaultPath: string) => {
+    const win = parentWindow()
+    if (!win) return null
+    const pdfDefault = defaultPath ? defaultPath.replace(/\.docx$/i, '.pdf') : 'Documento.pdf'
+    const result = await dialog.showSaveDialog(win, {
+      title: 'Exportar PDF',
+      defaultPath: pdfDefault,
+      filters: [{ name: 'Documento PDF (*.pdf)', extensions: ['pdf'] }]
+    })
+    if (result.canceled || !result.filePath) return null
+    validatePath(result.filePath)
+    const pdfData = await win.webContents.printToPDF({
+      printBackground: true,
+      pageSize: 'A4'
+    })
+    await writeFile(result.filePath, pdfData)
+    return result.filePath
+  })
+
+  ipcMain.handle('print:document', async () => {
+    const win = parentWindow()
+    if (!win) return
+    win.webContents.print({ silent: false, printBackground: true })
   })
 }
