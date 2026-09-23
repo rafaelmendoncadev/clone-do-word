@@ -35,6 +35,22 @@ Path aliases (must match in tsconfig.web.json **and** electron.vite.config.ts **
 
 Security baseline in `src/main/index.ts`: `contextIsolation: true`, `sandbox: true`, `nodeIntegration: false`. Never use `require`/Node in the renderer — go through `window.api` + preload IPC.
 
+## IPC (easy to miss)
+
+`IpcApi` in `src/shared/types/ipc.ts` is **not** enforced across processes. Every channel needs **three** sync points:
+
+1. type in `src/shared/types/ipc.ts`
+2. `ipcRenderer.invoke('…')` in `src/preload/index.ts`
+3. `ipcMain.handle('…')` in `src/main/ipc/index.ts`
+
+Miss step 3 and the renderer gets `No handler registered for '…'` at runtime (TS will not catch it). Happened with `window:setDirty`.
+
+Channel names are not always `namespace:method` — e.g. `print.exportPdf` → `print:pdf`. Copy the string from preload, don't invent it.
+
+Dirty window title format: `● {title} — Clone do Word`. Both `window:setTitle` and `window:setDirty` must keep that prefix/suffix and the `closeAfterSave` close path.
+
+Main/preload changes need a `pnpm dev` restart; renderer hot-reloads.
+
 ## TipTap / ProseMirror (easy to break)
 
 Hard-won constraints — violations caused a crash on first keystroke:
