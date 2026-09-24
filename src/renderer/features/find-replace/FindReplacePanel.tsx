@@ -144,7 +144,7 @@ export function FindReplacePanel({ open, onClose, mode }: Props) {
   }
 
   return (
-    <div className="fixed right-6 top-24 z-40 w-88 rounded-lg border border-neutral-300 bg-white p-4 shadow-xl">
+    <div className="fixed right-6 top-24 z-40 w-88 rounded-lg border border-neutral-300 bg-white p-4 shadow-xl print:hidden">
       <div className="mb-3 flex items-center justify-between border-b border-neutral-100 pb-2">
         <div className="flex items-center gap-2 text-sm font-semibold text-neutral-800">
           {mode === 'find' ? (

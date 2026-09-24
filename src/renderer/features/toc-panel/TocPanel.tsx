@@ -29,7 +29,7 @@ export function TocPanel({ open, onClose }: Props) {
   if (!open || !editor) return null
 
   return (
-    <div className="w-64 border-l border-neutral-200 bg-white p-3 shadow-sm flex flex-col h-full">
+      <div className="w-64 border-l border-neutral-200 bg-white p-3 shadow-sm flex flex-col h-full print:hidden">
       <div className="mb-3 flex items-center justify-between border-b border-neutral-100 pb-2">
         <div className="flex items-center gap-1.5 text-xs font-semibold text-neutral-700">
           <ListTree className="h-4 w-4 text-office-blue" />

@@ -9,7 +9,7 @@ export function TitleBar() {
   }
 
   return (
-    <div className="flex h-9 items-center justify-between border-b border-neutral-200 bg-neutral-50 px-3 text-sm select-none">
+    <div className="flex h-9 items-center justify-between border-b border-neutral-200 bg-neutral-50 px-3 text-sm select-none print:hidden">
       <div className="flex items-center gap-2">
         <span className="font-bold text-blue-700">W</span>
         <button

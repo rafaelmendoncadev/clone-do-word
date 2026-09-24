@@ -35,6 +35,34 @@ function parentWindow(): BrowserWindow | null {
   return BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0] ?? null
 }
 
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
+}
+
+/**
+ * Template nativo de cabeçalho/rodapé do printToPDF: repetido em CADA página do
+ * PDF com pageNumber/totalPages reais (classes do Chromium). Font-size explícito
+ * é obrigatório — sem ele o texto sai invisível.
+ */
+function buildPrintHeaderFooter(
+  template: string | undefined,
+  align: 'left' | 'center'
+): string | null {
+  const t = (template || '').trim()
+  if (!t) return null
+  const body = escapeHtml(t)
+    .replace(/\{PAGE\}/g, '<span class="pageNumber"></span>')
+    .replace(/\{NUMPAGES\}/g, '<span class="totalPages"></span>')
+    .replace(/\{DATE\}/g, escapeHtml(new Date().toLocaleDateString('pt-BR')))
+    .replace(/\{TIME\}/g, escapeHtml(new Date().toLocaleTimeString('pt-BR')))
+  return `<div style="font-size:8px;font-family:sans-serif;color:#666;text-align:${align};width:100%;box-sizing:border-box;padding:0 24px">${body}</div>`
+}
+
 /** dirty por BrowserWindow id — usado na confirmação ao fechar */
 export const dirtyWindows = new Map<number, boolean>()
 export const closeAfterSave = new Set<number>()
@@ -145,7 +173,7 @@ export function registerIpcHandlers(): void {
     }
   })
 
-  ipcMain.handle('print:pdf', async (_e, defaultPath: string) => {
+  ipcMain.handle('print:pdf', async (_e, defaultPath: string, header?: string, footer?: string) => {
     const win = parentWindow()
     if (!win) return null
     const pdfDefault = defaultPath ? defaultPath.replace(/\.docx$/i, '.pdf') : 'Documento.pdf'
@@ -156,9 +184,20 @@ export function registerIpcHandlers(): void {
     })
     if (result.canceled || !result.filePath) return null
     validatePath(result.filePath)
+    const headerTemplate = buildPrintHeaderFooter(header, 'left')
+    const footerTemplate = buildPrintHeaderFooter(footer, 'center')
+    const hasHeaderFooter = !!(headerTemplate || footerTemplate)
     const pdfData = await win.webContents.printToPDF({
       printBackground: true,
-      pageSize: 'A4'
+      pageSize: 'A4',
+      displayHeaderFooter: hasHeaderFooter,
+      headerTemplate: headerTemplate ?? '<div></div>',
+      footerTemplate: footerTemplate ?? '<div></div>',
+      // Faixa para o cabeçalho/rodapé nativos não cobrirem o conteúdo.
+      // ATENÇÃO: margens do printToPDF são em POLEGADAS (não pixels).
+      margins: hasHeaderFooter
+        ? { marginType: 'custom', top: 0.45, bottom: 0.45, left: 0, right: 0 }
+        : { marginType: 'none' }
     })
     await writeFile(result.filePath, pdfData)
     return result.filePath

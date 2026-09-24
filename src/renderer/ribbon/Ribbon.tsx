@@ -20,7 +20,7 @@ export function Ribbon() {
   const { activeRibbonTab, setActiveRibbonTab, toggleBackstage } = useEditorUiStore()
 
   return (
-    <div className="border-b border-neutral-200 bg-neutral-50 shadow-xs">
+    <div className="border-b border-neutral-200 bg-neutral-50 shadow-xs print:hidden">
       <div className="flex items-center gap-0 px-2 pt-1">
         {/* Botão de Destaque Arquivo (Backstage) */}
         <button

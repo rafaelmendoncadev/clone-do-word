@@ -20,3 +20,23 @@ body,
 body {
   font-family: var(--font-sans);
 }
+
+/* Impressão/exportação PDF: somente o documento, com a mesma formatação da tela */
+@page {
+  size: A4;
+  margin: 0;
+}
+
+@media print {
+  html,
+  body,
+  #root {
+    height: auto;
+    overflow: visible;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

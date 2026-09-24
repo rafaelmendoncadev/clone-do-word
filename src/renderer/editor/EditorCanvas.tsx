@@ -42,7 +42,7 @@ export function EditorCanvas() {
 
   const editor = useEditor({
     extensions,
-    content: '<p>Comece a digitar seu documento…</p>',
+    content: '<p></p>',
     editorProps,
     onUpdate: ({ editor: e }) => {
       setWordCount(countWords(e.getText()))
@@ -67,11 +67,11 @@ export function EditorCanvas() {
   const dims = getPageDimensions(setup)
 
   return (
-    <div className="flex h-full">
-      <div className="flex-1 overflow-auto bg-neutral-200 p-6">
+    <div className="flex h-full print:block">
+      <div className="flex-1 overflow-auto bg-neutral-200 p-6 print:overflow-visible print:bg-white print:p-0">
         {showRuler && (
           <div
-            className="mx-auto mb-2 h-5 border border-neutral-300 bg-white text-[9px] text-neutral-400"
+            className="mx-auto mb-2 h-5 border border-neutral-300 bg-white text-[9px] text-neutral-400 print:hidden"
             style={{ width: dims.widthPx * (zoom / 100) }}
           >
             <div className="flex h-full items-center justify-around">

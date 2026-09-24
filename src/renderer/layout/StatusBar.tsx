@@ -6,7 +6,7 @@ export function StatusBar() {
   const { zoom, setZoom } = useEditorUiStore()
 
   return (
-    <div className="flex h-6 items-center justify-between border-t border-neutral-200 bg-neutral-50 px-3 text-xs text-neutral-500">
+    <div className="flex h-6 items-center justify-between border-t border-neutral-200 bg-neutral-50 px-3 text-xs text-neutral-500 print:hidden">
       <div className="flex items-center gap-4">
         <span>Página 1 de {pageCount || 1}</span>
         <span>{wordCount} palavras</span>

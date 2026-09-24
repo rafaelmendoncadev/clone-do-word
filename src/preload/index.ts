@@ -19,7 +19,8 @@ const api: IpcApi = {
     setDirty: (dirty) => ipcRenderer.invoke('window:setDirty', dirty)
   },
   print: {
-    exportPdf: (defaultPath) => ipcRenderer.invoke('print:pdf', defaultPath),
+    exportPdf: (defaultPath, header, footer) =>
+      ipcRenderer.invoke('print:pdf', defaultPath, header, footer),
     document: () => ipcRenderer.invoke('print:document')
   },
   menu: {

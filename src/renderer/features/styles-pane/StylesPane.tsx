@@ -28,7 +28,7 @@ export function StylesPane() {
   }
 
   return (
-    <div className="w-56 border-l border-neutral-200 bg-white p-3 shadow-sm flex flex-col">
+      <div className="w-56 border-l border-neutral-200 bg-white p-3 shadow-sm flex flex-col print:hidden">
       <div className="mb-3 flex items-center justify-between border-b border-neutral-100 pb-2">
         <div className="flex items-center gap-1.5 text-xs font-semibold text-neutral-600">
           <Sparkles className="h-3.5 w-3.5 text-office-blue" />

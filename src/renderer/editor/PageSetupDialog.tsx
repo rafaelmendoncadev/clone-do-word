@@ -18,7 +18,7 @@ export function PageSetupDialog({ open, setup, headerFooter, onClose, onApply }:
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 print:hidden">
       <div className="w-[420px] rounded-lg bg-white p-6 shadow-xl">
         <h2 className="mb-4 text-lg font-semibold">Configurar Página</h2>
 

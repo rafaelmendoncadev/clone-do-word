@@ -4,6 +4,7 @@ import { ErrorBoundary } from './layout/ErrorBoundary'
 import { useDocumentStore } from './stores/useDocumentStore'
 import { useEditorStore } from './stores/useEditorStore'
 import { useEditorUiStore } from './stores/useEditorUiStore'
+import { useDocumentLayoutStore } from './stores/useDocumentLayoutStore'
 import { saveCurrentDocument, saveCurrentDocumentAs } from './lib/save-docx'
 import { openDocxIntoEditor, openRecentPath } from './lib/open-docx'
 import { StartScreen } from './features/home/StartScreen'
@@ -35,15 +36,40 @@ export default function App() {
     return () => window.removeEventListener('app:save', onAppSave)
   }, [handleSave])
 
-  const handleExportPdf = useCallback(async () => {
-    const docStore = useDocumentStore.getState()
-    const defaultPath = docStore.filePath || `${docStore.fileName}.docx`
-    await window.api?.print.exportPdf(defaultPath)
+  /**
+   * Executa impressão/exportação com zoom 100: o tamanho da folha é calculado
+   * a partir do zoom e sairia distorcido no PDF se o usuário estiver com zoom
+   * diferente. Restaura o zoom original ao final.
+   */
+  const withPrintZoom = useCallback(async <T,>(run: () => Promise<T>): Promise<T> => {
+    const prevZoom = useEditorUiStore.getState().zoom
+    if (prevZoom !== 100) useEditorUiStore.getState().setZoom(100)
+    // aguarda o React reaplicar as dimensões da folha antes de capturar
+    await new Promise((r) => setTimeout(r, 80))
+    try {
+      return await run()
+    } finally {
+      if (prevZoom !== 100) useEditorUiStore.getState().setZoom(prevZoom)
+    }
   }, [])
 
+  const handleExportPdf = useCallback(async () => {
+    // Fecha o backstage antes: se estivesse aberto, o printToPDF capturaria a tela.
+    useEditorUiStore.getState().setBackstage(false)
+    const docStore = useDocumentStore.getState()
+    const { headerFooter } = useDocumentLayoutStore.getState()
+    const defaultPath = docStore.filePath || `${docStore.fileName}.docx`
+    await withPrintZoom(
+      () =>
+        window.api?.print.exportPdf(defaultPath, headerFooter.header, headerFooter.footer) ??
+        Promise.resolve(null)
+    )
+  }, [withPrintZoom])
+
   const handlePrint = useCallback(async () => {
-    await window.api?.print.document()
-  }, [])
+    useEditorUiStore.getState().setBackstage(false)
+    await withPrintZoom(() => window.api?.print.document() ?? Promise.resolve())
+  }, [withPrintZoom])
 
   useEffect(() => {
     const unsubscribe = window.api?.menu.onAction(async (action) => {

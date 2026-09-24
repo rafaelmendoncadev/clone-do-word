@@ -23,7 +23,7 @@ export interface IpcApi {
     setDirty(dirty: boolean): Promise<void>
   }
   print: {
-    exportPdf(defaultPath: string): Promise<string | null>
+    exportPdf(defaultPath: string, header?: string, footer?: string): Promise<string | null>
     document(): Promise<void>
   }
   menu: {

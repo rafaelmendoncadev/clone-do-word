@@ -40,7 +40,7 @@ export function StartScreen({
   const { theme, setTheme } = useSettingsStore()
 
   return (
-    <div className="fixed inset-0 z-50 flex bg-white text-neutral-800 animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex bg-white text-neutral-800 animate-in fade-in duration-150 print:hidden">
       {/* Barra lateral de navegação Office Backstage */}
       <div className="flex w-64 flex-col bg-office-blue text-white shadow-xl">
         {/* Botão de retorno ao documento */}

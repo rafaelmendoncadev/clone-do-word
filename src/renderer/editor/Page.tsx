@@ -46,12 +46,12 @@ export function Page({
 
   return (
     <div
-      className="relative mx-auto mb-6 flex flex-col bg-white shadow-md"
+      className="relative mx-auto mb-6 flex flex-col bg-white shadow-md print:mb-0 print:shadow-none"
       style={{ width: pageW, minHeight: pageH }}
     >
       {/* Guia de margens */}
       <div
-        className="pointer-events-none absolute border border-dashed border-neutral-200"
+        className="pointer-events-none absolute border border-dashed border-neutral-200 print:hidden"
         style={{ top: pad.top, right: pad.right, bottom: pad.bottom, left: pad.left }}
       />
       <div
@@ -64,13 +64,13 @@ export function Page({
         }}
       >
         {header && (
-          <div className="mb-2 text-xs text-neutral-500">
+          <div className="mb-2 text-xs text-neutral-500 print:hidden">
             {resolveTokens(header, pageNumber, totalPages)}
           </div>
         )}
         <div className="flex-1 select-text cursor-text">{children}</div>
         {footer && (
-          <div className="mt-4 text-center text-xs text-neutral-500">
+          <div className="mt-4 text-center text-xs text-neutral-500 print:hidden">
             {resolveTokens(footer, pageNumber, totalPages)}
           </div>
         )}

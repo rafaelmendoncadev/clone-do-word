@@ -31,7 +31,7 @@ export function CommentsPane({ open, onClose }: Props) {
   }
 
   return (
-    <div className="flex h-full w-80 flex-col border-l border-neutral-200 bg-white shadow-sm">
+    <div className="flex h-full w-80 flex-col border-l border-neutral-200 bg-white shadow-sm print:hidden">
       <div className="flex items-center justify-between border-b border-neutral-200 bg-neutral-50 px-4 py-2.5">
         <div className="flex items-center gap-2 text-sm font-semibold text-neutral-800">
           <MessageSquare className="h-4 w-4 text-office-blue" />
